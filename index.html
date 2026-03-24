@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bracamonte Inmobiliaria · Inventario</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --naranja: #FC9C04;
+    --naranja-dark: #E08800;
+    --naranja-pale: #FFF4E0;
+    --gris: #ADADAD;
+    --crema: #F2F1ED;
+    --dark: #3A3A34;
+    --dark2: #2C2C27;
+    --cyan: #1AAEE5;
+    --white: #FFFFFF;
+    --mid: #6B6B63;
+    --border: #E0DDD6;
+    --green: #2D7A4F;
+    --green-bg: #E8F5EE;
+    --red: #C0392B;
+    --red-bg: #FDECEA;
+    --amber: #D4870A;
+    --amber-bg: #FEF3E0;
+    --shadow: 0 2px 10px rgba(58,58,52,0.08);
+    --shadow-lg: 0 8px 28px rgba(58,58,52,0.14);
+    --max-w: 520px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--crema);
+    color: var(--dark);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* ── LOADING ── */
+  #loading-screen {
+    position: fixed; inset: 0;
+    background: var(--dark);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999; gap: 18px;
+  }
+  .loading-logo-wrap { display: flex; align-items: center; gap: 14px; }
+  .loading-logo-icon { width: 52px; height: 52px; }
+  .loading-logo-text { color: white; }
+  .loading-logo-text h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: 1px; line-height: 1; }
+  .loading-logo-text span { font-size: 11px; color: var(--naranja); letter-spacing: 2.5px; text-transform: uppercase; font-weight: 500; }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(252,156,4,0.2); border-top-color: var(--naranja); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.5px; }
+
+  /* ── ERROR ── */
+  #error-banner { display: none; background: var(--red-bg); border-left: 4px solid var(--red); padding: 12px 16px; margin: 12px; border-radius: 8px; font-size: 13px; color: var(--red); }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--dark);
+    padding: 14px 16px 12px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  }
+  .header-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .logo-img { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
+  .logo-text h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: white; letter-spacing: 0.5px; line-height: 1; }
+  .logo-text span { font-size: 10px; color: var(--naranja); letter-spacing: 2px; text-transform: uppercase; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .stat-pill { text-align: center; line-height: 1.2; }
+  .stat-pill .num { font-size: 17px; font-weight: 700; color: var(--naranja); font-family: 'Barlow Condensed', sans-serif; }
+  .stat-pill .lbl { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+  .btn-refresh { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); border-radius: 7px; padding: 7px 11px; font-size: 13px; cursor: pointer; font-family: 'Barlow', sans-serif; transition: background 0.2s; display: flex; align-items: center; gap: 5px; }
+  .btn-refresh:hover { background: rgba(255,255,255,0.15); }
+  .btn-refresh.spinning .ri { animation: spin 0.8s linear infinite; display: inline-block; }
+
+  /* ── FILTERS ── */
+  .filters-wrap { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .filters-inner { max-width: var(--max-w); margin: 0 auto; }
+  .search-bar { display: flex; align-items: center; background: var(--crema); border: 1.5px solid var(--border); border-radius: 9px; padding: 0 12px; margin-bottom: 10px; transition: border-color 0.2s; }
+  .search-bar:focus-within { border-color: var(--naranja); }
+  .search-bar span { color: var(--gris); font-size: 15px; margin-right: 8px; }
+  .search-bar input { border: none; background: transparent; padding: 11px 0; font-family: 'Barlow', sans-serif; font-size: 15px; width: 100%; color: var(--dark); outline: none; }
+  .search-bar input::placeholder { color: #BBBBAA; }
+  .filters-row { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .filters-row::-webkit-scrollbar { display: none; }
+  select {
+    background: var(--crema); border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 7px 22px 7px 9px; font-family: 'Barlow', sans-serif; font-size: 13px;
+    color: var(--dark); cursor: pointer; outline: none; white-space: nowrap;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 7px center;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--naranja); }
+  select.active { border-color: var(--naranja); background-color: var(--naranja-pale); }
+  .btn-clear { background: none; border: 1.5px solid var(--border); border-radius: 7px; padding: 7px 11px; font-family: 'Barlow', sans-serif; font-size: 12px; color: var(--mid); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── RESULTS BAR ── */
+  .results-bar { padding: 9px 16px; max-width: var(--max-w); margin: 0 auto; font-size: 13px; color: var(--mid); }
+  .results-bar strong { color: var(--dark); }
+
+  /* ── CARDS ── */
+  .cards-list { padding: 0 12px 100px; display: flex; flex-direction: column; gap: 10px; max-width: var(--max-w); margin: 0 auto; }
+
+  .card { background: var(--white); border-radius: 12px; border: 1.5px solid var(--border); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; }
+  .card:active { transform: scale(0.99); }
+  .card:hover { box-shadow: var(--shadow-lg); }
+
+  .card-top { padding: 13px 13px 9px; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .card-code { font-size: 10px; color: var(--naranja); font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 1px; }
+  .card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--dark); line-height: 1.1; }
+  .card-loc { font-size: 12px; color: var(--mid); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+
+  .badge-estatus { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-estatus.disponible { background: var(--green-bg); color: var(--green); }
+  .badge-estatus.cerrado { background: var(--red-bg); color: var(--red); }
+  .badge-estatus.pausado { background: var(--amber-bg); color: var(--amber); }
+  .badge-estatus.otro { background: #EFEFEB; color: var(--mid); }
+
+  .badge-op { font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 600; background: var(--dark); color: var(--naranja); letter-spacing: 0.3px; }
+
+  .card-price { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 700; color: var(--dark); text-align: right; margin-top: 2px; }
+  .card-price.no-price { font-size: 12px; color: #BBBBAA; font-weight: 400; font-family: 'Barlow', sans-serif; }
+
+  .card-attrs { display: flex; gap: 12px; flex-wrap: wrap; padding: 0 13px 9px; }
+  .card-attr { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--mid); }
+
+  .card-bottom { background: var(--crema); border-top: 1px solid var(--border); padding: 8px 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .card-asesora { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mid); }
+  .avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; }
+  .card-fecha { font-size: 11px; color: #BBBBAA; }
+
+  /* ── DRIVE BUTTON ── */
+  .btn-drive {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--naranja); color: var(--dark);
+    border: none; border-radius: 7px;
+    padding: 7px 12px; font-family: 'Barlow', sans-serif;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+    margin: 0 13px 11px;
+  }
+  .btn-drive:hover { background: var(--naranja-dark); }
+  .btn-drive:active { transform: scale(0.97); }
+
+  /* ── EMPTY ── */
+  .empty-state { text-align: center; padding: 60px 30px; color: var(--mid); }
+  .empty-state .ico { font-size: 44px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(58,58,52,0.6); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: 18px 18px 0 0; width: 100%; max-width: 560px; max-height: 93vh; overflow-y: auto; padding: 0 0 32px; animation: slideUp 0.22s ease; }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-handle { width: 38px; height: 4px; background: var(--border); border-radius: 2px; margin: 11px auto 0; }
+  .modal-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: sticky; top: 0; background: var(--white); z-index: 10; }
+  .modal-header h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--dark); line-height: 1.1; }
+  .modal-header .sub { font-size: 12px; color: var(--naranja); font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 2px; }
+  .btn-close { background: var(--crema); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--mid); }
+
+  .modal-body { padding: 18px; }
+  .detail-section { margin-bottom: 18px; }
+  .detail-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--naranja); font-weight: 700; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1.5px solid var(--naranja-pale); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .detail-item .lbl { font-size: 10px; color: var(--gris); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; font-weight: 600; }
+  .detail-item .val { font-size: 14px; font-weight: 500; color: var(--dark); }
+  .detail-item.full { grid-column: 1 / -1; }
+
+  /* obs box in detail */
+  .obs-box { background: var(--naranja-pale); border: 1.5px solid #FFDDAA; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--dark2); line-height: 1.5; font-style: italic; }
+  .obs-box.empty { color: var(--gris); font-style: normal; }
+
+  /* ── EDIT FORM ── */
+  .modal-edit input, .modal-edit select, .modal-edit textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Barlow', sans-serif; font-size: 14px; color: var(--dark);
+    background: var(--crema); outline: none; transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .modal-edit input:focus, .modal-edit select:focus, .modal-edit textarea:focus { border-color: var(--naranja); background: var(--white); }
+  .modal-edit textarea { resize: vertical; min-height: 72px; }
+  .modal-edit label { display: block; font-size: 12px; color: var(--mid); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .modal-edit .field { margin-bottom: 13px; }
+  .modal-edit .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+  .modal-edit .field-hint { font-size: 11px; color: var(--gris); margin-top: 3px; }
+
+  .modal-actions { padding: 14px 18px 0; display: flex; gap: 9px; }
+  .btn-primary { flex: 1; background: var(--dark); color: white; border: none; border-radius: 9px; padding: 14px; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+  .btn-primary:hover { background: var(--dark2); }
+  .btn-primary:disabled { opacity: 0.55; cursor: default; }
+  .btn-secondary { background: var(--crema); color: var(--dark); border: 1.5px solid var(--border); border-radius: 9px; padding: 14px 16px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 15px; cursor: pointer; }
+  .btn-orange { background: var(--naranja); color: var(--dark); border: none; border-radius: 9px; padding: 14px 16px; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; }
+  .btn-danger { background: var(--red-bg); color: var(--red); border: 1.5px solid #f5c6c2; border-radius: 9px; padding: 13px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 14px; cursor: pointer; margin-top: 9px; width: 100%; }
+
+  /* ── CONFIG PANEL ── */
+  #config-panel { display: none; background: var(--white); border-bottom: 2px solid var(--naranja); padding: 16px; }
+  #config-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--dark); }
+  #config-panel p { font-size: 12px; color: var(--mid); margin-bottom: 10px; line-height: 1.5; }
+  #config-panel input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Barlow', sans-serif; font-size: 13px; outline: none; margin-bottom: 8px; }
+  #config-panel input:focus { border-color: var(--naranja); }
+  .btn-config-save { background: var(--naranja); color: var(--dark); border: none; border-radius: 8px; padding: 10px 18px; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; }
+
+  /* ── FAB ── */
+  .fab { position: fixed; bottom: 22px; right: 18px; background: var(--naranja); color: var(--dark); border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 26px; box-shadow: 0 4px 18px rgba(252,156,4,0.5); cursor: pointer; z-index: 50; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+  .fab:active { transform: scale(0.92); }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--dark); color: white; padding: 11px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; z-index: 500; opacity: 0; transition: all 0.28s; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (min-width: 560px) {
+    .cards-list { padding: 0 16px 100px; }
+    .modal { border-radius: 16px; margin-bottom: 20px; max-height: 90vh; }
+    .modal-overlay { align-items: center; }
+    .results-bar { padding: 9px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loading-logo-wrap">
+    <svg class="loading-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="50,5 90,90 10,90" fill="none"/>
+      <polygon points="50,8 35,75 50,68 65,75" fill="#ADADAD"/>
+      <polygon points="50,8 65,75 80,85 50,85" fill="#FC9C04"/>
+      <polygon points="50,8 20,85 35,75" fill="#ADADAD" opacity="0.6"/>
+    </svg>
+    <div class="loading-logo-text"><h1>BRACAMONTE</h1><span>Inmobiliaria</span></div>
+  </div>
+  <div class="spinner"></div>
+  <div class="loading-msg" id="loading-msg">Conectando con Google Sheets…</div>
+</div>
+
+<!-- CONFIG -->
+<div id="config-panel">
+  <h3>⚙️ Conectar con Google Sheets</h3>
+  <p>Pega aquí la URL de tu Apps Script para sincronizar el inventario.</p>
+  <input type="url" id="script-url-input" placeholder="https://script.google.com/macros/s/…/exec" />
+  <button class="btn-config-save" onclick="saveScriptUrl()">Guardar y conectar</button>
+</div>
+
+<div id="error-banner"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <svg class="logo-img" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,8 35,75 50,68 65,75" fill="#ADADAD"/>
+        <polygon points="50,8 65,75 82,88 50,88" fill="#FC9C04"/>
+        <polygon points="50,8 18,88 35,75" fill="#ADADAD" opacity="0.7"/>
+      </svg>
+      <div class="logo-text"><h1>BRACAMONTE</h1><span>Inventario</span></div>
+    </div>
+    <div class="header-right">
+      <div class="stat-pill"><div class="num" id="stat-total">—</div><div class="lbl">Total</div></div>
+      <div class="stat-pill"><div class="num" id="stat-disp" style="color:#4CAF7D">—</div><div class="lbl">Disp.</div></div>
+      <button class="btn-refresh" id="btn-refresh" onclick="loadData()"><span class="ri">↻</span></button>
+    </div>
+  </div>
+</header>
+
+<!-- FILTERS -->
+<div class="filters-wrap">
+  <div class="filters-inner">
+    <div class="search-bar">
+      <span>⌕</span>
+      <input type="text" id="search" placeholder="Buscar por código, ubicación, asesora…" autocomplete="off">
+    </div>
+    <div class="filters-row">
+      <select id="f-estatus" onchange="applyFilters()">
+        <option value="">Estatus</option>
+        <option>Disponible</option><option>Pausado</option><option>Cerrado</option>
+      </select>
+      <select id="f-tipo" onchange="applyFilters()">
+        <option value="">Tipo</option>
+        <option>Apartamento</option><option>Casa</option><option>Casa Quinta</option>
+        <option>Galpón</option><option>Granja</option><option>Local Comercial</option>
+        <option>Oficina</option><option>Pent House</option><option>Town House</option>
+        <option>Centro Comercial</option><option>Complejo Urbanístico</option>
+      </select>
+      <select id="f-asesora" onchange="applyFilters()">
+        <option value="">Asesora</option>
+        <option>Elibet</option><option>Geraldine</option><option>Karina</option>
+        <option>Maria Emilia</option><option>Rosmely</option><option>Teresa</option>
+        <option>Yarelys</option><option>Yoli</option>
+      </select>
+      <select id="f-operacion" onchange="applyFilters()">
+        <option value="">Operación</option><option>Venta</option><option>Alquiler</option>
+      </select>
+      <select id="f-ciudad" onchange="applyFilters()">
+        <option value="">Ciudad</option>
+        <option>Barquisimeto</option><option>Cabudare</option><option>El Manzano</option><option>Yaritagua</option>
+      </select>
+      <select id="f-orden" onchange="applyFilters()">
+        <option value="codigo-desc">↓ Más reciente</option>
+        <option value="codigo-asc">↑ Más antiguo</option>
+        <option value="fecha-desc">📅 Fecha ↓</option>
+        <option value="fecha-asc">📅 Fecha ↑</option>
+      </select>
+      <button class="btn-clear" onclick="clearFilters()">✕ Limpiar</button>
+    </div>
+  </div>
+</div>
+
+<div class="results-bar">Mostrando <strong id="count-shown">—</strong> inmuebles</div>
+
+<div class="cards-list" id="cards-list"></div>
+<div class="empty-state" id="empty-state" style="display:none">
+  <div class="ico">🔎</div><p>No se encontraron inmuebles con los filtros aplicados.</p>
+</div>
+
+<button class="fab" onclick="openAddModal()">＋</button>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal-detail" onclick="closeOnOverlay(event,'modal-detail')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="sub" id="d-codigo"></div>
+        <h2 id="d-tipo"></h2>
+        <div style="font-size:13px;color:var(--mid);margin-top:2px" id="d-loc"></div>
+      </div>
+      <button class="btn-close" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section">
+        <div class="detail-section-title">Estado & Operación</div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="lbl">Estatus</div><div class="val" id="d-estatus"></div></div>
+          <div class="detail-item"><div class="lbl">Operación</div><div class="val" id="d-operacion"></div></div>
+          <div class="detail-item"><div class="lbl">Precio USD</div><div class="val" id="d-precio"></div></div>
+          <div class="detail-item"><div class="lbl">Ciudad</div><div class="val" id="d-ciudad"></div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Características</div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="lbl">M² Construcción</div><div class="val" id="d-m2c"></div></div>
+          <div class="detail-item"><div class="lbl">M² Parcela</div><div class="val" id="d-m2p"></div></div>
+          <div class="detail-item"><div class="lbl">Habitaciones</div><div class="val" id="d-hab"></div></div>
+          <div class="detail-item"><div class="lbl">Baños</div><div class="val" id="d-ban"></div></div>
+          <div class="detail-item"><div class="lbl">Estacionamientos</div><div class="val" id="d-est"></div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Gestión</div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="lbl">Asesora</div><div class="val" id="d-asesora"></div></div>
+          <div class="detail-item"><div class="lbl">Fecha Captación</div><div class="val" id="d-fecha"></div></div>
+          <div class="detail-item"><div class="lbl">Publicado en IG</div><div class="val" id="d-ig"></div></div>
+          <div class="detail-item"><div class="lbl">Fecha Pub. IG</div><div class="val" id="d-fecha-ig"></div></div>
+          <div class="detail-item"><div class="lbl">Última Modificación</div><div class="val" id="d-mod"></div></div>
+        </div>
+      </div>
+      <!-- Drive button -->
+      <div id="d-drive-wrap" style="display:none">
+        <a id="d-drive-btn" href="#" target="_blank" class="btn-drive">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3l5.72 9.9L6.28 21H1.44L7.16 12 1.44 3h4.84zm5.72 0h4.84l5.72 9-5.72 9H12l5.72-9L12 3z"/></svg>
+          Abrir en Google Drive
+        </a>
+      </div>
+      <!-- Observaciones -->
+      <div class="detail-section" id="d-obs-section">
+        <div class="detail-section-title">Observaciones</div>
+        <div class="obs-box" id="d-obs"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-orange" onclick="openEditFromDetail()">✏️ Editar</button>
+      <button class="btn-secondary" onclick="closeModal('modal-detail')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT / ADD MODAL -->
+<div class="modal-overlay" id="modal-edit" onclick="closeOnOverlay(event,'modal-edit')">
+  <div class="modal modal-edit">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="sub" id="edit-title-sub">Nuevo</div>
+        <h2 id="edit-title-main">Añadir Inmueble</h2>
+      </div>
+      <button class="btn-close" onclick="closeModal('modal-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Código</label><input id="e-codigo" placeholder="B-051" /></div>
+        <div class="field"><label>Fecha Captación</label><input id="e-fecha" placeholder="DD/MM/AAAA" /></div>
+      </div>
+      <div class="field"><label>Asesora</label>
+        <select id="e-asesora">
+          <option value="">Seleccionar…</option>
+          <option>Elibet</option><option>Geraldine</option><option>Karina</option>
+          <option>Maria Emilia</option><option>Rosmely</option><option>Teresa</option>
+          <option>Yarelys</option><option>Yoli</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Tipo</label>
+          <select id="e-tipo">
+            <option value="">Seleccionar…</option>
+            <option>Apartamento</option><option>Casa</option><option>Casa Quinta</option>
+            <option>Galpón</option><option>Granja</option><option>Local Comercial</option>
+            <option>Oficina</option><option>Pent House</option><option>Town House</option>
+            <option>Centro Comercial</option><option>Complejo Urbanístico</option>
+          </select>
+        </div>
+        <div class="field"><label>Operación</label>
+          <select id="e-operacion">
+            <option value="">Seleccionar…</option>
+            <option>Venta</option><option>Alquiler</option><option>Venta, Alquiler</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Locación / Urbanización</label><input id="e-locacion" placeholder="Ej. Arca del Valle" /></div>
+      <div class="field"><label>Ciudad</label>
+        <select id="e-ciudad">
+          <option value="">Seleccionar…</option>
+          <option>Barquisimeto</option><option>Cabudare</option><option>El Manzano</option><option>Yaritagua</option>
+        </select>
+      </div>
+      <div class="field"><label>Precio USD</label><input id="e-precio" type="text" placeholder="Ej. 120000 (solo número)" /></div>
+      <div class="field-row">
+        <div class="field">
+          <label>M² Construcción</label>
+          <input id="e-m2c" type="text" placeholder="Ej. 200" />
+          <div class="field-hint">Solo el número — se agrega m² automático</div>
+        </div>
+        <div class="field">
+          <label>M² Parcela</label>
+          <input id="e-m2p" type="text" placeholder="Ej. 400" />
+          <div class="field-hint">Solo el número — se agrega m² automático</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Habitaciones</label><input id="e-hab" placeholder="Ej. 4" /></div>
+        <div class="field"><label>Baños</label><input id="e-ban" placeholder="Ej. 3" /></div>
+      </div>
+      <div class="field"><label>Estacionamientos</label><input id="e-est" placeholder="Ej. 2" /></div>
+      <div class="field"><label>Estatus</label>
+        <select id="e-estatus">
+          <option value="">Seleccionar…</option>
+          <option>Disponible</option><option>Pausado</option><option>Cerrado</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Publicado en IG</label>
+          <select id="e-ig"><option value="">—</option><option>Sí</option><option>No</option></select>
+        </div>
+        <div class="field"><label>Fecha Pub. IG</label><input id="e-fecha-ig" placeholder="DD/MM/AAAA" /></div>
+      </div>
+      <div class="field">
+        <label>Enlace Carpeta Drive</label>
+        <input id="e-drive" type="url" placeholder="https://drive.google.com/drive/folders/…" />
+        <div class="field-hint">Pega el enlace completo de la carpeta en Google Drive</div>
+      </div>
+      <div class="field">
+        <label>Observaciones</label>
+        <textarea id="e-obs" placeholder="Notas internas sobre este inmueble (solo visibles en la app)…"></textarea>
+        <div class="field-hint">Esta información no se guarda en Google Sheets, solo en la app</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="btn-save" onclick="saveProperty()">Añadir Inmueble</button>
+      <button class="btn-secondary" onclick="closeModal('modal-edit')">Cancelar</button>
+    </div>
+    <div style="padding:0 18px">
+      <button class="btn-danger" id="btn-delete" onclick="deleteProperty()" style="display:none">🗑 Eliminar este inmueble</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+// ⚠️ PEGA AQUÍ TU URL DE APPS SCRIPT
+const SCRIPT_URL_DEFAULT = "";
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let properties = [];
+let localObs = {};   // observaciones locales: { 'B-001': 'texto...' }
+let currentEditIndex = -1;
+
+function getScriptUrl() { return localStorage.getItem('brac_script_url') || SCRIPT_URL_DEFAULT; }
+function saveScriptUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) { showToast('⚠️ URL inválida'); return; }
+  localStorage.setItem('brac_script_url', url);
+  document.getElementById('config-panel').style.display = 'none';
+  loadData();
+}
+
+// Observaciones se guardan en localStorage por código
+function loadObs() {
+  try { localObs = JSON.parse(localStorage.getItem('brac_obs') || '{}'); } catch(e) { localObs = {}; }
+}
+function saveObs(codigo, text) {
+  localObs[codigo] = text;
+  localStorage.setItem('brac_obs', JSON.stringify(localObs));
+}
+
+// ═══════════════════════════════════════════
+//  JSONP
+// ═══════════════════════════════════════════
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now();
+    const script = document.createElement('script');
+    const url = getScriptUrl();
+    const qs = Object.entries(params).map(([k,v]) => encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+    script.src = url + '?' + qs + '&callback=' + cbName;
+    const timer = setTimeout(() => { cleanup(); reject(new Error('Tiempo de espera agotado')); }, 15000);
+    script.onerror = () => { cleanup(); reject(new Error('Error de red')); };
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+    function cleanup() { clearTimeout(timer); delete window[cbName]; if(script.parentNode) document.body.removeChild(script); }
+    document.body.appendChild(script);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  LOAD DATA
+// ═══════════════════════════════════════════
+async function loadData() {
+  const url = getScriptUrl();
+  if (!url) {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('config-panel').style.display = 'block';
+    return;
+  }
+  document.getElementById('loading-screen').style.display = 'flex';
+  document.getElementById('loading-msg').textContent = 'Actualizando desde Google Sheets…';
+  document.getElementById('btn-refresh').classList.add('spinning');
+  try {
+    const json = await jsonp({ action: 'read' });
+    if (json.status !== 'ok') throw new Error(json.msg || 'Error desconocido');
+    properties = json.data.map(row => ({
+      codigo:          row['Código'] || '-',
+      fecha:           row['Fecha Captación'] || '-',
+      asesora:         row['Asesora'] || '-',
+      operacion:       row['Operación'] || '-',
+      tipo:            row['Tipo de Inmueble'] || '-',
+      locacion:        row['Locación'] || '-',
+      ciudad:          row['Ciudad'] || '-',
+      precio:          row['Precio USD'] || '-',
+      m2_const:        row['M2 Construcción'] || '-',
+      m2_parcela:      row['M2 Parcela'] || '-',
+      habitaciones:    row['Habitaciones'] || '-',
+      banos:           row['Baños'] || '-',
+      estacionamientos:row['Estacionamientos'] || '-',
+      estatus:         row['Estatus'] || '-',
+      pub_ig:          row['Publicado IG'] || '-',
+      fecha_ig:        row['Fecha Pub. IG'] || '-',
+      drive:           row['Carpeta Drive'] || '-',
+      ultima_mod:      row['Última Modificación'] || '-',
+    }));
+    properties.sort((a,b) => (parseInt(b.codigo.replace('B-',''))||0)-(parseInt(a.codigo.replace('B-',''))||0));
+    hideError(); renderCards(properties); updateStats();
+  } catch(err) {
+    showError('No se pudo conectar con Google Sheets. (' + err.message + ')');
+    renderCards([]);
+  } finally {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('btn-refresh').classList.remove('spinning');
+  }
+}
+
+async function saveToSheets(prop) {
+  const today = getTodayStr();
+  const data = await jsonp({
+    action:'save',
+    'Código':prop.codigo,'Fecha Captación':prop.fecha,'Asesora':prop.asesora,
+    'Operación':prop.operacion,'Tipo de Inmueble':prop.tipo,'Locación':prop.locacion,
+    'Ciudad':prop.ciudad,'Precio USD':prop.precio,'M2 Construcción':prop.m2_const,
+    'M2 Parcela':prop.m2_parcela,'Habitaciones':prop.habitaciones,'Baños':prop.banos,
+    'Estacionamientos':prop.estacionamientos,'Estatus':prop.estatus,
+    'Publicado IG':prop.pub_ig,'Fecha Pub. IG':prop.fecha_ig,
+    'Carpeta Drive':prop.drive,'Última Modificación':today,
+  });
+  if (data.status !== 'ok') throw new Error(data.msg);
+}
+async function deleteFromSheets(codigo) {
+  const data = await jsonp({ action:'delete', codigo });
+  if (data.status !== 'ok') throw new Error(data.msg);
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+const avatarColors = {'Elibet':'#C0392B','Geraldine':'#8E44AD','Yoli':'#2980B9','Teresa':'#16A085','Karina':'#D35400','Rosmely':'#884EA0','Yarelys':'#1A5276','Maria Emilia':'#117A65'};
+function getAvatarColor(n) { return avatarColors[n] || '#5A5A52'; }
+function getInitials(n) { if(!n||n==='-') return '?'; return n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function fmtPrice(p) { if(!p||p==='-') return null; const n=parseFloat(p); if(isNaN(n)) return null; return '$'+n.toLocaleString('es-VE',{maximumFractionDigits:0}); }
+function fmtNum(v) { if(!v||v==='-'||v==='.') return '-'; const n=parseFloat(v); return isNaN(n)?v:(Number.isInteger(n)?String(n):v); }
+function fmtM2(v) {
+  if(!v||v==='-') return '-';
+  // strip existing m2 suffix and re-add
+  const clean = String(v).replace(/m2/gi,'').replace(/m²/g,'').trim();
+  if(!clean) return '-';
+  return clean + ' m²';
+}
+function getTodayStr() { const d=new Date(); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
+function showError(msg) { const el=document.getElementById('error-banner'); el.textContent='⚠️ '+msg; el.style.display='block'; }
+function hideError() { document.getElementById('error-banner').style.display='none'; }
+function isDriveUrl(v) { return v && v !== '-' && (v.startsWith('http://') || v.startsWith('https://')); }
+
+// ═══════════════════════════════════════════
+//  RENDER CARDS
+// ═══════════════════════════════════════════
+function renderCards(list) {
+  const container = document.getElementById('cards-list');
+  const empty = document.getElementById('empty-state');
+  document.getElementById('count-shown').textContent = list.length;
+  if (!list.length) { container.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  container.innerHTML = list.map(p => {
+    const idx = properties.indexOf(p);
+    const price = fmtPrice(p.precio);
+    const eClass = p.estatus==='Disponible'?'disponible':p.estatus==='Cerrado'?'cerrado':p.estatus==='Pausado'?'pausado':'otro';
+    const eIcon = p.estatus==='Disponible'?'✅':p.estatus==='Cerrado'?'🔒':p.estatus==='Pausado'?'⏸':'•';
+    const color = getAvatarColor(p.asesora);
+    const attrs = [];
+    if (p.m2_const&&p.m2_const!=='-') attrs.push(`<span class="card-attr">📐 ${fmtM2(p.m2_const)}</span>`);
+    if (p.habitaciones&&p.habitaciones!=='-'&&p.habitaciones!=='.') attrs.push(`<span class="card-attr">🛏 ${fmtNum(p.habitaciones)}</span>`);
+    if (p.banos&&p.banos!=='-') attrs.push(`<span class="card-attr">🚿 ${fmtNum(p.banos)}</span>`);
+    if (p.estacionamientos&&p.estacionamientos!=='-') attrs.push(`<span class="card-attr">🚗 ${fmtNum(p.estacionamientos)}</span>`);
+    const hasDrive = isDriveUrl(p.drive);
+    const hasObs = localObs[p.codigo] && localObs[p.codigo].trim();
+
+    return `<div class="card" onclick="openDetail(${idx})">
+      <div class="card-top">
+        <div class="card-head">
+          <div class="card-left">
+            <div class="card-code">${p.codigo}</div>
+            <div class="card-title">${p.tipo}</div>
+            <div class="card-loc">📍 ${p.locacion}${p.ciudad&&p.ciudad!=='-'?' · '+p.ciudad:''}</div>
+          </div>
+          <div class="card-badges">
+            <span class="badge-estatus ${eClass}">${eIcon} ${p.estatus||'—'}</span>
+            <span class="badge-op">${p.operacion||'—'}</span>
+            ${price?`<div class="card-price">${price}</div>`:`<div class="card-price no-price">Sin precio</div>`}
+          </div>
+        </div>
+      </div>
+      ${attrs.length?`<div class="card-attrs">${attrs.join('')}</div>`:''}
+      ${hasDrive?`<a class="btn-drive" href="${p.drive}" target="_blank" onclick="event.stopPropagation()"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3l5.72 9.9L6.28 21H1.44L7.16 12 1.44 3h4.84zm5.72 0h4.84l5.72 9-5.72 9H12l5.72-9L12 3z"/></svg> Abrir en Drive</a>`:''}
+      <div class="card-bottom">
+        <div class="card-asesora">
+          <div class="avatar" style="background:${color}">${getInitials(p.asesora)}</div>
+          <span>${p.asesora&&p.asesora!=='-'?p.asesora:'Sin asesora'}</span>
+          ${hasObs?'<span style="font-size:10px;color:var(--naranja);margin-left:4px">📝</span>':''}
+        </div>
+        <div class="card-fecha">${p.fecha&&p.fecha!=='-'?p.fecha:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = properties.length;
+  document.getElementById('stat-disp').textContent = properties.filter(p=>p.estatus==='Disponible').length;
+}
+
+// ═══════════════════════════════════════════
+//  FILTERS
+// ═══════════════════════════════════════════
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const estatus = document.getElementById('f-estatus').value;
+  const tipo = document.getElementById('f-tipo').value;
+  const asesora = document.getElementById('f-asesora').value;
+  const operacion = document.getElementById('f-operacion').value;
+  const ciudad = document.getElementById('f-ciudad').value;
+  const orden = document.getElementById('f-orden').value;
+  ['f-estatus','f-tipo','f-asesora','f-operacion','f-ciudad'].forEach(id=>{
+    const el=document.getElementById(id); el.classList.toggle('active',!!el.value);
+  });
+  let filtered = properties.filter(p => {
+    if (estatus && p.estatus!==estatus) return false;
+    if (tipo && p.tipo!==tipo) return false;
+    if (asesora && !p.asesora.includes(asesora)) return false;
+    if (operacion && !p.operacion.includes(operacion)) return false;
+    if (ciudad && p.ciudad!==ciudad) return false;
+    if (q) { const h=`${p.codigo} ${p.tipo} ${p.locacion} ${p.ciudad} ${p.asesora} ${p.precio}`.toLowerCase(); if(!h.includes(q)) return false; }
+    return true;
+  });
+  filtered.sort((a,b)=>{
+    if (orden==='codigo-asc') return (parseInt(a.codigo.replace('B-',''))||0)-(parseInt(b.codigo.replace('B-',''))||0);
+    if (orden==='fecha-desc'||orden==='fecha-asc') {
+      const pa=a.fecha&&a.fecha!=='-'?a.fecha.split('/').reverse().join(''):'0';
+      const pb=b.fecha&&b.fecha!=='-'?b.fecha.split('/').reverse().join(''):'0';
+      return orden==='fecha-desc'?pb.localeCompare(pa):pa.localeCompare(pb);
+    }
+    return (parseInt(b.codigo.replace('B-',''))||0)-(parseInt(a.codigo.replace('B-',''))||0);
+  });
+  renderCards(filtered);
+}
+function clearFilters() {
+  document.getElementById('search').value='';
+  ['f-estatus','f-tipo','f-asesora','f-operacion','f-ciudad'].forEach(id=>{document.getElementById(id).value='';document.getElementById(id).classList.remove('active');});
+  document.getElementById('f-orden').value='codigo-desc';
+  applyFilters();
+}
+
+// ═══════════════════════════════════════════
+//  DETAIL MODAL
+// ═══════════════════════════════════════════
+function openDetail(idx) {
+  const p = properties[idx]; currentEditIndex = idx;
+  document.getElementById('d-codigo').textContent = p.codigo;
+  document.getElementById('d-tipo').textContent = p.tipo;
+  document.getElementById('d-loc').textContent = `${p.locacion}${p.ciudad&&p.ciudad!=='-'?' · '+p.ciudad:''}`;
+  const eClass=p.estatus==='Disponible'?'disponible':p.estatus==='Cerrado'?'cerrado':p.estatus==='Pausado'?'pausado':'otro';
+  const eIcon=p.estatus==='Disponible'?'✅':p.estatus==='Cerrado'?'🔒':p.estatus==='Pausado'?'⏸':'•';
+  document.getElementById('d-estatus').innerHTML=`<span class="badge-estatus ${eClass}">${eIcon} ${p.estatus||'—'}</span>`;
+  document.getElementById('d-operacion').textContent=p.operacion||'—';
+  document.getElementById('d-precio').textContent=fmtPrice(p.precio)||'—';
+  document.getElementById('d-ciudad').textContent=p.ciudad||'—';
+  document.getElementById('d-m2c').textContent=fmtM2(p.m2_const);
+  document.getElementById('d-m2p').textContent=fmtM2(p.m2_parcela);
+  document.getElementById('d-hab').textContent=fmtNum(p.habitaciones);
+  document.getElementById('d-ban').textContent=fmtNum(p.banos);
+  document.getElementById('d-est').textContent=fmtNum(p.estacionamientos);
+  document.getElementById('d-asesora').textContent=p.asesora||'—';
+  document.getElementById('d-fecha').textContent=p.fecha&&p.fecha!=='-'?p.fecha:'—';
+  document.getElementById('d-ig').textContent=p.pub_ig||'—';
+  document.getElementById('d-fecha-ig').textContent=p.fecha_ig&&p.fecha_ig!=='-'?p.fecha_ig:'—';
+  document.getElementById('d-mod').textContent=p.ultima_mod&&p.ultima_mod!=='-'?p.ultima_mod:'—';
+
+  // Drive button
+  const driveWrap = document.getElementById('d-drive-wrap');
+  const driveBtn = document.getElementById('d-drive-btn');
+  if (isDriveUrl(p.drive)) { driveBtn.href=p.drive; driveWrap.style.display='block'; }
+  else { driveWrap.style.display='none'; }
+
+  // Observaciones
+  const obs = localObs[p.codigo] || '';
+  const obsEl = document.getElementById('d-obs');
+  if (obs.trim()) { obsEl.textContent=obs; obsEl.className='obs-box'; }
+  else { obsEl.textContent='Sin observaciones.'; obsEl.className='obs-box empty'; }
+
+  openModal('modal-detail');
+}
+function openEditFromDetail() { closeModal('modal-detail'); setTimeout(()=>openEditModal(currentEditIndex),200); }
+
+// ═══════════════════════════════════════════
+//  EDIT / ADD MODAL
+// ═══════════════════════════════════════════
+function openEditModal(idx) {
+  const p=properties[idx]; currentEditIndex=idx;
+  document.getElementById('edit-title-sub').textContent=p.codigo;
+  document.getElementById('edit-title-main').textContent='Editar Inmueble';
+  document.getElementById('btn-save').textContent='💾 Guardar cambios';
+  document.getElementById('btn-delete').style.display='block';
+  document.getElementById('e-codigo').value=p.codigo||'';
+  document.getElementById('e-fecha').value=p.fecha!=='-'?p.fecha:'';
+  document.getElementById('e-asesora').value=p.asesora!=='-'?p.asesora:'';
+  document.getElementById('e-tipo').value=p.tipo||'';
+  document.getElementById('e-operacion').value=p.operacion||'';
+  document.getElementById('e-locacion').value=p.locacion||'';
+  document.getElementById('e-ciudad').value=p.ciudad||'';
+  document.getElementById('e-precio').value=p.precio!=='-'?p.precio:'';
+  // Strip m2 for editing
+  document.getElementById('e-m2c').value=p.m2_const!=='-'?String(p.m2_const).replace(/m2/gi,'').replace(/m²/g,'').trim():'';
+  document.getElementById('e-m2p').value=p.m2_parcela!=='-'?String(p.m2_parcela).replace(/m2/gi,'').replace(/m²/g,'').trim():'';
+  document.getElementById('e-hab').value=p.habitaciones!=='-'?p.habitaciones:'';
+  document.getElementById('e-ban').value=p.banos!=='-'?p.banos:'';
+  document.getElementById('e-est').value=p.estacionamientos!=='-'?p.estacionamientos:'';
+  document.getElementById('e-estatus').value=p.estatus||'';
+  document.getElementById('e-ig').value=p.pub_ig||'';
+  document.getElementById('e-fecha-ig').value=p.fecha_ig!=='-'?p.fecha_ig:'';
+  document.getElementById('e-drive').value=p.drive!=='-'?p.drive:'';
+  document.getElementById('e-obs').value=localObs[p.codigo]||'';
+  openModal('modal-edit');
+}
+
+function openAddModal() {
+  currentEditIndex=-1;
+  document.getElementById('edit-title-sub').textContent='Nuevo';
+  document.getElementById('edit-title-main').textContent='Añadir Inmueble';
+  document.getElementById('btn-save').textContent='Añadir Inmueble';
+  document.getElementById('btn-delete').style.display='none';
+  const nums=properties.map(p=>parseInt(p.codigo.replace('B-',''))).filter(n=>!isNaN(n));
+  const next=nums.length?Math.max(...nums)+1:51;
+  document.getElementById('e-codigo').value=`B-${String(next).padStart(3,'0')}`;
+  ['e-fecha','e-asesora','e-tipo','e-operacion','e-locacion','e-ciudad','e-precio',
+   'e-m2c','e-m2p','e-hab','e-ban','e-est','e-estatus','e-ig','e-fecha-ig','e-drive','e-obs'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('e-fecha').value=getTodayStr();
+  openModal('modal-edit');
+}
+
+async function saveProperty() {
+  const btn=document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='⏳ Guardando…';
+
+  // Auto-add m² suffix
+  const m2c_raw = document.getElementById('e-m2c').value.trim();
+  const m2p_raw = document.getElementById('e-m2p').value.trim();
+  const m2c_val = m2c_raw ? m2c_raw.replace(/m2/gi,'').replace(/m²/g,'').trim() + ' m²' : '-';
+  const m2p_val = m2p_raw ? m2p_raw.replace(/m2/gi,'').replace(/m²/g,'').trim() + ' m²' : '-';
+
+  const prop = {
+    codigo:          document.getElementById('e-codigo').value||'—',
+    fecha:           document.getElementById('e-fecha').value||'-',
+    asesora:         document.getElementById('e-asesora').value||'-',
+    tipo:            document.getElementById('e-tipo').value||'-',
+    operacion:       document.getElementById('e-operacion').value||'-',
+    locacion:        document.getElementById('e-locacion').value||'-',
+    ciudad:          document.getElementById('e-ciudad').value||'-',
+    precio:          document.getElementById('e-precio').value||'-',
+    m2_const:        m2c_val,
+    m2_parcela:      m2p_val,
+    habitaciones:    document.getElementById('e-hab').value||'-',
+    banos:           document.getElementById('e-ban').value||'-',
+    estacionamientos:document.getElementById('e-est').value||'-',
+    estatus:         document.getElementById('e-estatus').value||'-',
+    pub_ig:          document.getElementById('e-ig').value||'-',
+    fecha_ig:        document.getElementById('e-fecha-ig').value||'-',
+    drive:           document.getElementById('e-drive').value||'-',
+    ultima_mod:      getTodayStr(),
+  };
+
+  // Save observaciones locally
+  const obsText = document.getElementById('e-obs').value.trim();
+  saveObs(prop.codigo, obsText);
+
+  try {
+    await saveToSheets(prop);
+    closeModal('modal-edit');
+    showToast(currentEditIndex===-1?'✅ Inmueble añadido':'💾 Cambios guardados');
+    await loadData();
+  } catch(err) {
+    showToast('❌ Error: ' + err.message);
+  } finally {
+    btn.disabled=false;
+    btn.textContent=currentEditIndex===-1?'Añadir Inmueble':'💾 Guardar cambios';
+  }
+}
+
+async function deleteProperty() {
+  const codigo=properties[currentEditIndex].codigo;
+  if (!confirm(`¿Eliminar el inmueble ${codigo}? Esta acción no se puede deshacer.`)) return;
+  try {
+    await deleteFromSheets(codigo);
+    delete localObs[codigo];
+    localStorage.setItem('brac_obs', JSON.stringify(localObs));
+    closeModal('modal-edit');
+    showToast('🗑 Inmueble eliminado');
+    await loadData();
+  } catch(err) { showToast('❌ Error: '+err.message); }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+function closeOnOverlay(e,id) { if(e.target.id===id) closeModal(id); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+
+let searchTimer;
+document.getElementById('search').addEventListener('input',()=>{ clearTimeout(searchTimer); searchTimer=setTimeout(applyFilters,200); });
+
+loadObs();
+loadData();
+</script>
+</body>
+</html>
